@@ -39,6 +39,7 @@ class LDAPAuthenticator < ::Auth::Authenticator
 
   private
   def auth_result(auth_info)
+    auth_info[:email] = "#{auth_info[:nickname]}@csh.rit.edu"
     case SiteSetting.ldap_user_create_mode
       when 'none'
         ldap_user = LDAPUser.new(auth_info)
