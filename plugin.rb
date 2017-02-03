@@ -1,14 +1,14 @@
 # name:ldap 
 # about: A plugin to provide ldap authentication. 
-# version: 0.2.0
+# version: 0.3.0
 # authors: Jon Bake <jonmbake@gmail.com>
 
 enabled_site_setting :ldap_enabled
 
 gem 'pyu-ruby-sasl', '0.0.3.3', require: false
-gem 'rubyntlm', '0.1.1', require: false
-gem 'net-ldap', '0.3.1'
-gem 'omniauth-ldap', '1.0.4'
+gem 'rubyntlm', '0.3.4', require: false
+gem 'net-ldap', '0.14.0'
+gem 'omniauth-ldap', '1.0.5'
 
 require 'yaml'
 require_relative 'lib/ldap_user'
@@ -23,6 +23,7 @@ class LDAPAuthenticator < ::Auth::Authenticator
   end
 
   def register_middleware(omniauth)
+    omniauth.configure{ |c| c.form_css = File.read(File.expand_path("../css/form.css", __FILE__)) }
     omniauth.provider :ldap,
       setup:  -> (env) {
         env["omniauth.strategy"].options.merge!(
@@ -31,8 +32,10 @@ class LDAPAuthenticator < ::Auth::Authenticator
           method: SiteSetting.ldap_method,
           base: SiteSetting.ldap_base,
           uid: SiteSetting.ldap_uid,
-          bind_dn: SiteSetting.ldap_bind_db,
-          password: SiteSetting.ldap_password
+          # In 0.3.0, we fixed a typo in the ldap_bind_dn config name. This fallback will be removed in a future version.
+          bind_dn: SiteSetting.ldap_bind_dn.presence || SiteSetting.try(:ldap_bind_db),
+          password: SiteSetting.ldap_password,
+          filter: SiteSetting.ldap_filter
         )
       }
   end
